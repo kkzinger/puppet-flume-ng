@@ -24,18 +24,18 @@ class flume_ng (
   }
 
   file { "/etc/profile.d/flume-ng.sh":
-    content => template("flume-ng/etc/profile.d/flume-ng.sh.erb"),
+    content => template("flume_ng/etc/profile.d/flume-ng.sh.erb"),
     require => Exec["unpack_flume"];
   }
 
   file { "/etc/init.d/flume-ng-agent":
-    content => template("flume-ng/etc/init.d/flume-ng-agent.erb"),
+    content => template("flume_ng/etc/init.d/flume-ng-agent.erb"),
     mode => '0755',
     require => Exec["unpack_flume"];
   }
 
   file { "${flume_home}-${flume_version}/conf/log4j.properties":
-    content => template("flume-ng/log4j.properties.erb"),
+    content => template("flume_ng/log4j.properties.erb"),
     require => Exec["unpack_flume"];
   }
 
