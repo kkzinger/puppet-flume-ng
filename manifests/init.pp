@@ -40,7 +40,7 @@ class flume_ng (
   }
 
   file { "${flume_home}-${flume_version}/conf/flume-env.sh":
-    source  => "puppet:///modules/flume-ng/flume-env.sh",
+    source  => "puppet:///modules/flume_ng/flume-env.sh",
     owner   => root,
     require => Exec["unpack_flume"];
   }
