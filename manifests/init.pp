@@ -1,4 +1,4 @@
-class flume-ng (
+class flume_ng (
     $flume_version = "1.5.2",
     $flume_home = "/opt/flume-ng",
     $flume_logs_dir = "/var/log/flume-ng/") {
