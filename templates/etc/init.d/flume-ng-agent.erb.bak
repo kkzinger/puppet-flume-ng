@@ -15,10 +15,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# Starts a Flume agent
+# Starts a Flume NG agent
 #
 # chkconfig: 345 90 10
-# description: Flume agent
+# description: Flume NG agent
 #
 ### BEGIN INIT INFO
 # Provides:          flume-ng-agent
@@ -28,20 +28,14 @@
 # Should-Stop:
 # Default-Start:     3 4 5
 # Default-Stop:      0 1 2 6
-# Short-Description: Flume agent
+# Short-Description: Flume NG agent
 ### END INIT INFO
 
 . /lib/lsb/init-functions
 
-# Name of the agnet
-FLUME_AGENT_NAME=a1
-
-# Setting up a few defaults that can be later overrideen in /etc/default/flume-ng-agent
-FLUME_LOG_DIR=/var/log/flume-ng
-FLUME_CONF_DIR=/etc/flume-ng/conf_${FLUME_AGENT_NAME}
-FLUME_RUN_DIR=/var/run/flume-ng
-FLUME_HOME=/usr/lib/flume-ng
-FLUME_USER=flume
+if [ -f /etc/default/flume-ng-agent ] ; then
+  . /etc/default/flume-ng-agent
+fi
 
 # Autodetect JAVA_HOME if not defined
 if [ -e /usr/libexec/bigtop-detect-javahome ]; then
@@ -57,13 +51,22 @@ STATUS_NOT_RUNNING=3
 
 ERROR_PROGRAM_NOT_INSTALLED=5
 
+FLUME_LOG_DIR=<%= @flume_logs_dir %>
+FLUME_RUN_DIR=/var/run/flume-ng
+FLUME_HOME=<%= @flume_home %>-<%= @flume_version %>
+FLUME_CONF_DIR=/etc/flume/conf
+FLUME_USER=root
+
+FLUME_CONF_FILE=${FLUME_CONF_DIR}/flume-agent.conf
+FLUME_AGENT_NAME=agent
+
 FLUME_LOCK_DIR="/var/lock/subsys/"
-LOCKFILE="${FLUME_LOCK_DIR}/flume-ng-agent"
-desc="Flume agent daemon"
+LOCKFILE="${FLUME_LOCK_DIR}/flume-ng-${FLUME_AGENT_NAME}"
+desc="Flume NG agent daemon"
 
 FLUME_CONF_FILE=${FLUME_CONF_FILE:-${FLUME_CONF_DIR}/flume.conf}
-EXEC_PATH=/usr/bin/flume-ng
-FLUME_PID_FILE=${FLUME_RUN_DIR}/flume-ng-agent-${FLUME_AGENT_NAME}.pid
+EXEC_PATH=${FLUME_HOME}/bin/flume-ng
+FLUME_PID_FILE=${FLUME_RUN_DIR}/flume-ng-${FLUME_AGENT_NAME}.pid
 
 # These directories may be tmpfs and may or may not exist
 # depending on the OS (ex: /var/lock/subsys does not exist on debian/ubuntu)
@@ -71,7 +74,9 @@ for dir in "$FLUME_RUN_DIR" "$FLUME_LOCK_DIR"; do
   [ -d "${dir}" ] || install -d -m 0755 -o $FLUME_USER -g $FLUME_USER ${dir}
 done
 
-FLUME_SHUTDOWN_TIMEOUT=${FLUME_SHUTDOWN_TIMEOUT:-60}
+
+DEFAULT_FLUME_AGENT_NAME="agent"
+FLUME_AGENT_NAME=${FLUME_AGENT_NAME:-${DEFAULT_FLUME_AGENT_NAME}}
 
 start() {
   [ -x $exec ] || exit $ERROR_PROGRAM_NOT_INSTALLED
@@ -83,7 +88,7 @@ start() {
   fi
 
   log_success_msg "Starting $desc (flume-ng-agent): "
-  /bin/su -s /bin/bash -c "/bin/bash -c 'echo \$\$ > ${FLUME_PID_FILE} && exec ${EXEC_PATH} agent --conf $FLUME_CONF_DIR --conf-file $FLUME_CONF_FILE --name $FLUME_AGENT_NAME >>${FLUME_LOG_DIR}/flume.${FLUME_AGENT_NAME}.init.log 2>&1 ' &" $FLUME_USER
+  /bin/su -s /bin/bash -c "/bin/bash -c 'echo \$\$ >${FLUME_PID_FILE} && exec ${EXEC_PATH} agent --conf $FLUME_CONF_DIR --conf-file $FLUME_CONF_FILE --name $FLUME_AGENT_NAME >>${FLUME_LOG_DIR}/flume.init.log 2>&1' &" $FLUME_USER
   RETVAL=$?
   [ $RETVAL -eq 0 ] && touch $LOCKFILE
   return $RETVAL
@@ -100,10 +105,7 @@ stop() {
   FLUME_PID=`cat $FLUME_PID_FILE`
   if [ -n $FLUME_PID ]; then
     kill -TERM ${FLUME_PID} &>/dev/null
-    for i in `seq 1 ${FLUME_SHUTDOWN_TIMEOUT}` ; do
-      kill -0 ${FLUME_PID} &>/dev/null || break
-      sleep 1
-    done
+    sleep 5
     kill -KILL ${FLUME_PID} &>/dev/null
   fi
   rm -f $LOCKFILE $FLUME_PID_FILE
@@ -121,19 +123,19 @@ checkstatus(){
 
   case "$status" in
     $STATUS_RUNNING)
-      log_success_msg "Flume agent is running"
+      log_success_msg "Flume NG agent is running"
       ;;
     $STATUS_DEAD)
-      log_failure_msg "Flume agent is dead and pid file exists"
+      log_failure_msg "Flume NG agent is dead and pid file exists"
       ;;
     $STATUS_DEAD_AND_LOCK)
-      log_failure_msg "Flume agent is dead and lock file exists"
+      log_failure_msg "Flume NG agent is dead and lock file exists"
       ;;
     $STATUS_NOT_RUNNING)
-      log_failure_msg "Flume agent is not running"
+      log_failure_msg "Flume NG agent is not running"
       ;;
     *)
-      log_failure_msg "Flume agent status is unknown"
+      log_failure_msg "Flume NG agent status is unknown"
       ;;
   esac
   return $status
